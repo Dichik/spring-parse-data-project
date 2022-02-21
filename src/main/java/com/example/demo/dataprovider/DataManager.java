@@ -4,8 +4,10 @@ import com.example.demo.entity.*;
 import com.example.demo.repository.*;
 import io.netty.util.internal.StringUtil;
 import lombok.*;
+import org.hibernate.id.UUIDGenerationStrategy;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.processing.Generated;
 import java.time.Year;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -65,14 +67,6 @@ public class DataManager {
                 System.out.println(ex);
             }
 
-            Movie movie = Movie.builder()
-                    .directorId(directorId)
-                    .runtime(allData.get(i)[2])
-                    .releasedYear(String.valueOf(year.getValue()))
-                    .gross(gross)
-                    .title(allData.get(i)[0])
-                    .build();
-            movies.add(movie);
             Long noOfVotes = Long.valueOf(0);
             try {
                 noOfVotes = Long.valueOf(allData.get(i)[10]);
@@ -80,10 +74,21 @@ public class DataManager {
                 System.out.println(ex);
             }
             Rating rating = Rating.builder()
+                    .id(UUID.randomUUID())
                     .score(Double.valueOf(allData.get(i)[4]))
                     .noOfVotes(noOfVotes)
                     .build();
             ratings.add(rating);
+
+            Movie movie = Movie.builder()
+                    .directorId(directorId)
+                    .runtime(allData.get(i)[2])
+                    .releasedYear(String.valueOf(year.getValue()))
+                    .gross(gross)
+                    .ratingId(rating.getId())
+                    .title(allData.get(i)[0])
+                    .build();
+            movies.add(movie);
         }
         ratingRepository.saveAll(ratings);
         return movies;
@@ -184,4 +189,50 @@ public class DataManager {
         // TODO throw exception
     }
 
+    public Set<ActorMovie> fetchActorMovieData() {
+        List<Rating> ratings = new ArrayList<>();
+        Set<ActorMovie> actorMovies = new HashSet<>();
+        for(int i = allData.size() - 1000; i < allData.size(); ++ i) {
+            Long noOfVotes = Long.valueOf(0);
+            try {
+                noOfVotes = Long.valueOf(allData.get(i)[3]);
+            } catch (NumberFormatException ex) {
+                System.out.println(ex);
+            }
+            Rating rating = Rating.builder()
+                    .id(UUID.randomUUID())
+                    .score(Double.valueOf(allData.get(i)[4]))
+                    .noOfVotes(noOfVotes)
+                    .build();
+            ratings.add(rating);
+
+            Long movieId = -1L;
+
+            Long actorId = -1L;
+
+            if(movieRepository.existsByTitle(allData.get(i)[1])) {
+                Optional<Movie> movie = movieRepository.findByTitle(allData.get(i)[1]);
+                if(movie.isPresent()) {
+                    movieId = movie.get().getId();
+                }
+            }
+            String[] data = allData.get(i)[0].split(" ");
+            String firstName = data[0];
+            String secondName = data.length > 1 ? data[1] : UNKNOWN_FIELD;
+            if(actorRepository.existsByFirstNameAndSecondName(firstName, secondName)) {
+                Optional<Actor> actor = actorRepository.findByFirstNameAndSecondName(firstName, secondName);
+                if(actor.isPresent()) {
+                    actorId = actor.get().getId();
+                }
+            }
+
+            ActorMovie actorMovie = ActorMovie.builder()
+                    .movieId(movieId)
+                    .actorId(actorId)
+                    .ratingId(rating.getId())
+                    .build();
+            actorMovies.add(actorMovie);
+        }
+        return actorMovies;
+    }
 }

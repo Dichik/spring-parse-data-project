@@ -4,8 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.id.UUIDGenerationStrategy;
 
 import javax.persistence.*;
+import java.util.UUID;
 
 @Data
 @Entity
@@ -16,7 +18,7 @@ import javax.persistence.*;
 public class Rating {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
+    private UUID id;
 
     private Double score;
     private Long noOfVotes;

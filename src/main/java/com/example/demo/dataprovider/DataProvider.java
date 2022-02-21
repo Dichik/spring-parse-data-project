@@ -24,12 +24,14 @@ public class DataProvider {
     private final ActorRepository actorRepository;
     private final AwardRepository awardRepository;
     private final MovieRepository movieRepository;
+    private final ActorMovieRepository actorMovieRepository;
 
     private final DataManager dataManager;
 
     public void loadData() {
         parseIMDBRatingCSVFile();
         parseAwardsCSVFile();
+        parseActorsMovieData();
     }
 
     private void parseAwardsCSVFile() {
@@ -57,6 +59,18 @@ public class DataProvider {
             actorRepository.saveAll(dataManager.fetchActorsData());
 
             movieRepository.saveAll(dataManager.fetchMoviesData());
+        } catch (IOException | CsvException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void parseActorsMovieData() {
+        try {
+            String strFile = "src/main/java/com/example/demo/csv/actorfilms.csv";
+            CSVReader reader = new CSVReader(new FileReader(strFile));
+            dataManager.setAllData(reader.readAll());
+
+            actorMovieRepository.saveAll(dataManager.fetchActorMovieData());
         } catch (IOException | CsvException e) {
             e.printStackTrace();
         }
